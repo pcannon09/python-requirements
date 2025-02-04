@@ -1,3 +1,8 @@
-[install_dir="./pip_modules"]
+[install_dir="./tests/pip_modules"]
 
-remove "pygame"
+remove.install_dir
+
+${ls}
+
+install "pygame"
+install "colorama"
