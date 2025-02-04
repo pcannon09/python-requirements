@@ -21,7 +21,7 @@ class File:
     def install(self, line: str):
         global command
 
-        matchCommand = r'remove "(.*)"'
+        matchCommand = r'install "(.*)"'
 
         matching = re.match(matchCommand , line)
 
@@ -37,8 +37,9 @@ class File:
 
             os.system(command)
 
-        else:
-            debug.debug(f'Did not match any command that contains `{matchCommand}`', "warn")
+            return
+
+        debug.debug(f'Did not match any command called `{matchCommand}`', "warn")
 
     def remove(self, line: str):
         global command
@@ -52,8 +53,38 @@ class File:
 
             os.system(command)
 
-        else:
-            debug.debug(f'Did not match any command that contains `{matchCommand}`', "warn")
+            return
+
+        debug.debug(f'Did not match any command called `{matchCommand}`', "warn")
+
+    def removeDir(self, line: str):
+        matchCommand = r'remove_dir "(.*)"'
+
+        matching = re.match(matchCommand, line)
+
+        if (matching):
+            if (os.path.exists(matching.group(1))):
+                os.removedirs(matching.group(1))
+
+                return
+            
+            debug.debug(f"[ WARN ] `{matching.group(1)}` does not exist, hence, not removing it")
+
+    def runSystemCommand(self, line: str):
+        matchCommand = r'\${(.*)}'
+
+        matching = re.match(matchCommand, line)
+
+        if (matching):
+            os.system(matching.group(1))
+
+    def remove_installDir(self, line: str):
+        matchCommand = r"remove.install_dir"
+
+        matching = re.match(matchCommand, line)
+
+        if (matching):
+            os.removedirs(self.installDir)
 
     def statement_installDir(self, matching):
         self.installDir = matching.group(1)
@@ -68,20 +99,27 @@ class File:
                 continue
 
             # Commands
-            elif line.startswith("install "):
+            elif line.startswith("install"):
                 self.install(line)
+
+            elif line.startswith("remove.install_dir"):
+                self.remove_installDir(line)
 
             elif line.startswith("remove"):
                 self.remove(line)
 
-            # Command statements
-            # elif line.startswith("[") and line.endswith("]"):
-            #     matching = re.match(r'install_dir="(.*)"', line)
-            #     
-            #     if (matching):
-            #         self.statement_installDir(matching, line)
+            # System commands
+            elif line.startswith("${") and line.endswith("}"):
+                self.runSystemCommand(line)
 
-            #         return
+            # Command statements
+            elif line.startswith("[") and line.endswith("]"):
+                matching = re.match(r'\[install_dir="(.*)"]', line)
+
+                if (matching):
+                    self.statement_installDir(matching)
                 
+                    continue
+
                 # matching = re.match()
 
