@@ -1,0 +1,15 @@
+# Private
+.private
+
+# Tests
+tests/*
+!tests/.requirements
+
+# Tmp
+*.tmp
+*.swp
+
+*/__pycache__/*
+
+# OS
+.DS_Store

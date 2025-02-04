@@ -1,0 +1,3 @@
+[install_dir="./pip_modules"]
+
+remove "pygame"
