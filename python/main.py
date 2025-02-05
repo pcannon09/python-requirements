@@ -16,7 +16,10 @@ if __name__ == "__main__":
 
     debug.debug(f"Parsing `{file.id}`...", "info")
 
-    file.parse()
+    out = file.parse()
 
-    debug.debug(f"Done parsing `{file.id}`...", "info")
+    print(out)
+
+    if (out[0] == 0):
+        debug.debug(f"Done parsing `{file.id}`...", "info")
 
