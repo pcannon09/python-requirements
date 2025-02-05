@@ -1,7 +1,7 @@
 class ReqInfo:
-    VERSION_MAJOR: str = "0"
-    VERSION_MINOR: str = "0"
-    VERSION_PATCH: str = "0"
+    VERSION_MAJOR: int = 0
+    VERSION_MINOR: int = 0
+    VERSION_PATCH: int = 0
 
     VERSION_STATE: str = "dev"
 
