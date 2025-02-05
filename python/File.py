@@ -1,7 +1,12 @@
 from Debug import debug
 
+from typing import Any
+
 import os
 import re
+import shutil
+import platform
+import subprocess
 
 class File:
     def __init__(self, id: str, path: str):
@@ -15,111 +20,108 @@ class File:
         self.path: str = path
         self.id: str = id
         self.installDir: str = ""
+        self.spacing = r"\s*" # Equivalent to ' ' ( Space )
+        self.quote = r'["\']' # `'` or `"`
+
+        self.lineNum: int = 0
 
         self.file = open(path, "r")
 
-    def install(self, line: str):
+        self.commands: list = [
+            # {matchCommand}                          ,                          {functionCall}
+            [rf'{self.spacing}install{self.spacing}{self.quote}(.*){self.quote}', self.install],
+            [rf'{self.spacing}remove{self.spacing}{self.quote}(.*){self.quote}', self.remove],
+            [rf'\[{self.spacing}install_dir{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_installDir]
+            # [rf'[{self.spacing}install_dir{self.spacing}={self.spacing}"(.*)"{self.quote}]', self.statement_installDir],
+        ]
+
+    def install(self, line: str, matching) -> list:
         global command
 
-        matchCommand = r'install "(.*)"'
+        if (matching):
+            print(matching)
+            print(matching.group(1))
 
-        matching = re.match(matchCommand , line)
-
-        if matching:
             if (self.installDir == ""):
                 command = f"pip3 install {matching.group(1)} --break-system-packages"
-            
+
             else:
                 if (not os.path.exists(self.installDir)):
-                    os.makedirs(f"{os.getcwd()}/{self.installDir}")
+                    commandRun = subprocess.run([f"{os.getcwd()}/{self.installDir}"], capture_output=True, text=True)
+
+                    if (commandRun.returncode != 0):
+                        return [commandRun.returncode, commandRun.stderr]
 
                 command = f"pip3 install --target={self.installDir} {matching.group(1)}"
 
-            os.system(command)
+            commandRun = subprocess.run([command], capture_output=True, text=True)
 
-            return
+            return [commandRun.returncode, commandRun.stderr]
 
-        debug.debug(f'Did not match any command called `{matchCommand}`', "warn")
+        return [-1, "No matching command for `install()`"]
 
-    def remove(self, line: str):
-        global command
-
-        matchCommand = r'remove "(.*)"'
-
-        matching = re.match(matchCommand, line)
-
+    def remove(self, line: str, matching) -> list:
         if matching:
             command = f"pip3 uninstall {matching.group(1)} --break-system-packages"
 
-            os.system(command)
+            commandRun = subprocess.run([command], capture_output=True, text=True)
 
-            return
+            return [commandRun.returncode, commandRun.stderr]
 
-        debug.debug(f'Did not match any command called `{matchCommand}`', "warn")
+        return [-1, "No matching command for `remove()`"]
 
-    def removeDir(self, line: str):
-        matchCommand = r'remove_dir "(.*)"'
-
-        matching = re.match(matchCommand, line)
-
+    def removeDir(self, line: str, matching) -> list:
         if (matching):
             if (os.path.exists(matching.group(1))):
-                os.removedirs(matching.group(1))
+                shutil.rmtree(matching.group(1))
 
-                return
-            
+                return [0, ""]
+
             debug.debug(f"[ WARN ] `{matching.group(1)}` does not exist, hence, not removing it")
 
-    def runSystemCommand(self, line: str):
-        matchCommand = r'\${(.*)}'
+        return [-1, "No matching command for `removeDir()`"]
 
-        matching = re.match(matchCommand, line)
-
+    def runSystemCommand(self, line: str, matching) -> list:
         if (matching):
-            os.system(matching.group(1))
+            commandRun = subprocess.run([matching.group(1)], capture_output=True, text=True)
 
-    def remove_installDir(self, line: str):
-        matchCommand = r"remove.install_dir"
+            return [commandRun.returncode, commandRun.stderr]
 
-        matching = re.match(matchCommand, line)
+        return [-1, "No matching command for `runSystemCommand()`"]
 
+    def remove_installDir(self, line: str, matching) -> list:
         if (matching):
-            os.removedirs(self.installDir)
+            if (os.path.exists(self.installDir)):
+                shutil.rmtree(self.installDir)
 
-    def statement_installDir(self, matching):
+                return [0, ""]
+
+        return [-1, "No matching command for `remove_installDir()`"]
+
+    def statement_installDir(self, line: str = "", matching: Any = Any) -> list:
         self.installDir = matching.group(1)
 
-    def parse(self):
+        return [0, ""]
+
+    def parse(self) -> list:
         lines = self.file.read().split("\n")
 
         for line in lines:
             line = line.strip()
 
-            if not line or line.startswith("#"):
-                continue
+            self.lineNum += 1
 
-            # Commands
-            elif line.startswith("install"):
-                self.install(line)
-
-            elif line.startswith("remove.install_dir"):
-                self.remove_installDir(line)
-
-            elif line.startswith("remove"):
-                self.remove(line)
-
-            # System commands
-            elif line.startswith("${") and line.endswith("}"):
-                self.runSystemCommand(line)
-
-            # Command statements
-            elif line.startswith("[") and line.endswith("]"):
-                matching = re.match(r'\[install_dir="(.*)"]', line)
+            for x in self.commands:
+                matching = re.match(x[0], line)
 
                 if (matching):
-                    self.statement_installDir(matching)
-                
+                    x[1](line=line, matching=matching)
+
                     continue
 
-                # matching = re.match()
+                else:
+                    if (not line.startswith("#") and line):
+                        return [-1, f"Unknown command in file `{self.path}` on line `{self.lineNum}`: {line}\nExit status -1"]
+
+        return [0, ""]
 
