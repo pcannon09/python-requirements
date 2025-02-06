@@ -23,3 +23,6 @@ if __name__ == "__main__":
     if (out[0] == 0):
         debug.debug(f"Done parsing `{file.id}`...", "info")
 
+    else:
+        debug.debug(f"Failed to parse `{file.id}`...", "error")
+
