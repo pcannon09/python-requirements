@@ -1,4 +1,7 @@
-# Future requirements
-[ install_dir = "./pip_modules/" ]
+[ install_dir = "./tests/pip_modules/" ]
 
-install "pygame"
+remove.install_dir
+
+remove "pygame"
+install "colorama"
+
