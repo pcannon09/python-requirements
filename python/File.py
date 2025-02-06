@@ -7,6 +7,7 @@ import re
 import shutil
 import platform
 import subprocess
+import glob
 
 class File:
     def __init__(self, id: str, path: str):
@@ -31,30 +32,25 @@ class File:
             # {matchCommand}                          ,                          {functionCall}
             [rf'{self.spacing}install{self.spacing}{self.quote}(.*){self.quote}', self.install],
             [rf'{self.spacing}remove{self.spacing}{self.quote}(.*){self.quote}', self.remove],
-            [rf'\[{self.spacing}install_dir{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_installDir]
-            # [rf'[{self.spacing}install_dir{self.spacing}={self.spacing}"(.*)"{self.quote}]', self.statement_installDir],
+            [rf'\[{self.spacing}install_dir{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_installDir],
+            [r'\$\{(.*)}', self.runSystemCommand],
+            [r'remove.install_dir', self.remove_installDir]
         ]
 
     def install(self, line: str, matching) -> list:
         global command
 
         if (matching):
-            print(matching)
-            print(matching.group(1))
-
             if (self.installDir == ""):
                 command = f"pip3 install {matching.group(1)} --break-system-packages"
 
             else:
                 if (not os.path.exists(self.installDir)):
-                    commandRun = subprocess.run([f"{os.getcwd()}/{self.installDir}"], capture_output=True, text=True)
-
-                    if (commandRun.returncode != 0):
-                        return [commandRun.returncode, commandRun.stderr]
+                    os.makedirs(f"{os.getcwd()}/{self.installDir}")
 
                 command = f"pip3 install --target={self.installDir} {matching.group(1)}"
 
-            commandRun = subprocess.run([command], capture_output=True, text=True)
+            commandRun = subprocess.run(command, shell=True)
 
             return [commandRun.returncode, commandRun.stderr]
 
@@ -62,11 +58,27 @@ class File:
 
     def remove(self, line: str, matching) -> list:
         if matching:
-            command = f"pip3 uninstall {matching.group(1)} --break-system-packages"
+            if (self.installDir == ""):
+                command = f"pip3 uninstall {matching.group(1)} --break-system-packages"
 
-            commandRun = subprocess.run([command], capture_output=True, text=True)
+                commandRun = subprocess.run([command], shell=True)
 
-            return [commandRun.returncode, commandRun.stderr]
+                return [commandRun.returncode, commandRun.stderr]
+
+            else:
+                removeDirStr = rf"{self.installDir}*{matching.group(1)}*"
+                matchingDirs = glob.glob(removeDirStr)
+
+                for path in matchingDirs:
+                    if (os.path.exists(path)):
+                        shutil.rmtree(path)
+
+                        os.system("ls ./tests/pip_modules")
+
+                pythonIncFile = f"{self.installDir}include/python/{matching.group(1)}"
+
+                if (os.path.exists(pythonIncFile)):
+                    shutil.rmtree(pythonIncFile)
 
         return [-1, "No matching command for `remove()`"]
 
@@ -83,7 +95,7 @@ class File:
 
     def runSystemCommand(self, line: str, matching) -> list:
         if (matching):
-            commandRun = subprocess.run([matching.group(1)], capture_output=True, text=True)
+            commandRun = subprocess.run([matching.group(1)], shell=True)
 
             return [commandRun.returncode, commandRun.stderr]
 
@@ -117,11 +129,11 @@ class File:
                 if (matching):
                     x[1](line=line, matching=matching)
 
-                    continue
+                    break
 
-                else:
-                    if (not line.startswith("#") and line):
-                        return [-1, f"Unknown command in file `{self.path}` on line `{self.lineNum}`: {line}\nExit status -1"]
+            else:
+                if not line.startswith("#") and line:
+                    return [-1, f"Unknown command in file `{self.path}` on line `{self.lineNum}`: {line}\nExit status -1"]
 
         return [0, ""]
 
