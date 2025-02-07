@@ -60,3 +60,11 @@ remove "{package}"
 ${<command>}
 ```
 
+### Remove the install dir
+
+```
+# Remove the previously set installation dir
+
+remove.install_dir
+```
+
