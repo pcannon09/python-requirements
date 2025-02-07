@@ -1,10 +1,11 @@
+from typing import overload
 from ReqInfo import ReqInfo
 import datetime as dt
 
 class Debug:
     save_defaultType: str = "debug"
 
-    def __init__(self, saveFile: str | None, defaultType: str = "debug"):
+    def __init__(self, saveFile: str | None, defaultType: str | None = "debug"):
         global save_defaultType
 
         self.saveFile = saveFile
@@ -23,5 +24,9 @@ class Debug:
                 file.write(f"{debugData}\n")
                 file.flush()
 
-debug = Debug(".private/logs/debug.log")
+if (ReqInfo.DEV):
+    debug = Debug(".private/logs/debug.log")
+
+else:
+    debug = Debug(None)
 
