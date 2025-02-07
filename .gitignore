@@ -9,8 +9,11 @@ tests/*
 *.tmp
 *.swp
 
-# Cache
+# Cache and builds
 */__pycache__/*
+python/build/
+python/dist/
+python/main.spec
 
 # OS
 .DS_Store
