@@ -1,7 +1,15 @@
 [ install_dir = "./tests/pip_modules/" ]
+[ conf_dir = "./tests/conf.py" ]
 
-remove.install_dir
+[ required_os = "darwin" ]
+install "pyobjc"
 
-remove "pygame"
-install "colorama"
+[ required_os = "windows" ]
+install "pywin32"
+
+[ required_os = "linux" ]
+install "pyxhook"
+
+[ required_os = "any" ]
+install "pygame"
 
