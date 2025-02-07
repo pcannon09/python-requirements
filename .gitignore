@@ -9,6 +9,7 @@ tests/*
 *.tmp
 *.swp
 
+# Cache
 */__pycache__/*
 
 # OS
