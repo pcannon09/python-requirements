@@ -15,5 +15,7 @@ python/build/
 python/dist/
 python/main.spec
 
+bin
+
 # OS
 .DS_Store
