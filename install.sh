@@ -23,7 +23,13 @@ if [[ "$1" == "" ]]; then
 
     pyinstaller --onefile $compileFilesStr
 
-    mv ./python/dist/main ./python/dist/py-req
+    mv ./dist/main ./dist/py-req
+
+    cd ..
+
+    mkdir -p bin
+
+    mv ./python/dist/py-req ./bin/
 
 elif [[ "$1" == "run" ]]; then
     ./python/dist/main/py-req "$2"
