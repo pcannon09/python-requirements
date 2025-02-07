@@ -20,9 +20,12 @@ class File:
 
         self.path: str = path
         self.id: str = id
-        self.installDir: str = ""
         self.spacing = r"\s*" # Equivalent to ' ' ( Space )
         self.quote = r'["\']' # `'` or `"`
+
+        self.installDir: str = ""
+        self.confPath: str = ""
+        self.osNameReq: str = "any"
 
         self.lineNum: int = 0
 
@@ -32,23 +35,58 @@ class File:
             # {matchCommand}                          ,                          {functionCall}
             [rf'{self.spacing}install{self.spacing}{self.quote}(.*){self.quote}', self.install],
             [rf'{self.spacing}remove{self.spacing}{self.quote}(.*){self.quote}', self.remove],
+            [rf'\$\{{{self.spacing}(.*){self.spacing}}}', self.runSystemCommand],
+            [r'remove.install_dir', self.remove_installDir],
+
             [rf'\[{self.spacing}install_dir{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_installDir],
-            [r'\$\{(.*)}', self.runSystemCommand],
-            [r'remove.install_dir', self.remove_installDir]
+            [rf'\[{self.spacing}required_os{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_setRequiredOS],
+            [rf'\[{self.spacing}conf_dir{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_setConfDir]
         ]
 
+    def statement_setConfDir(self, line: str, matching) -> list:
+        if (matching):
+            if (not os.path.exists(matching.group(1))):
+                os.makedirs(os.path.dirname(matching.group(1)), exist_ok=True)
+
+            writeStr: str = f"""
+# Auto generated config file from `python-requirements`
+
+import sys
+
+sys.path.append("{self.installDir}") # Add the modules path
+"""
+
+            with open(matching.group(1), "w") as f:
+                f.write(writeStr)
+
+            self.confPath = matching.group(1)
+
+            return [0, ""]
+
+        return [-1, "No matching command for `statement_setConfDir()`"]
+
+    def statement_setRequiredOS(self, line: str, matching) -> list:
+        if (matching):
+            self.osNameReq = matching.group(1).lower()
+
+            return [0, ""]
+
+        return [-1, "No matching command for `statement_setRequiredOS()`"]
+
     def install(self, line: str, matching) -> list:
-        global command
+        command: str = ""
 
         if (matching):
             if (self.installDir == ""):
-                command = f"pip3 install {matching.group(1)} --break-system-packages"
+                if (platform.system().lower() == self.osNameReq or self.osNameReq.lower() == "any"):
+                    command = f"pip3 install {matching.group(1)} --break-system-packages"
 
             else:
                 if (not os.path.exists(self.installDir)):
                     os.makedirs(f"{os.getcwd()}/{self.installDir}")
 
-                command = f"pip3 install --target={self.installDir} {matching.group(1)}"
+                if (platform.system().lower() == self.osNameReq or self.osNameReq.lower() == "any"):
+                    command = f"pip3 install --target={self.installDir} {matching.group(1)}"
 
             commandRun = subprocess.run(command, shell=True)
 
