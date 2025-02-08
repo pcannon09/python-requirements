@@ -60,7 +60,7 @@ remove "{package}"
 ${<command>}
 ```
 
-### Remove the install dir
+### Remove the installation dir
 
 ```
 # Remove the previously set installation dir
@@ -68,3 +68,34 @@ ${<command>}
 remove.install_dir
 ```
 
+### Example:
+```
+# From now on, set the installation dir to `./tests/pip_modules/`, if install_dir specified after the `install` command, it will install it for system
+# It installs it for system
+install "{package}"
+
+# From now on, install it on the `./tests/pip_modules` dir
+[ install_dir = "./tests/pip_modules/" ]
+
+# Remove the installation dir
+remove.install_dir
+
+# Generate config, it can be useful if you don't want manually create the config to include the `./tests/pip_modules` dir to the python path
+[ conf_dir = "./tests/conf.py" ]
+
+# Install `pyobjc` for macOS (AKA: Darwin)
+[ required_os = "darwin" ]
+install "pyobjc"
+
+# Install `pywin32` for Windows
+[ required_os = "windows" ]
+install "pywin32"
+
+# Install `pyxhook` for linux
+[ required_os = "linux" ]
+install "pyxhook"
+
+# Install `pygame` for any OS
+[ required_os = "any" ]
+install "pygame"
+```
