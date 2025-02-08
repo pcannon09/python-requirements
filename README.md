@@ -120,4 +120,7 @@ install "pyxhook"
 # Install `pygame` for any OS
 [ required_os = "any" ]
 install "pygame"
+
+# Install colorama version 0.4.5
+install "colorama"=="0.4.5"
 ```
