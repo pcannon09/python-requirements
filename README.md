@@ -1,6 +1,6 @@
 # Python Requirements
 ## Made with python and for python
-### 1.0.0
+### 1.1.0
 
 ---
 
@@ -43,6 +43,16 @@ A simple python requirements txt file but as a superset
 install "{package}"
 ```
 
+```
+# This will install the package with a specific version of it
+
+install "{package}"=="{version}"
+
+# Example
+
+install "colorama"=="0.4.5"
+```
+
 ### Remove a package
 
 ```
@@ -50,6 +60,18 @@ install "{package}"
 # If remove package function is called before the installation dir command (Or if installation dir statement not called), it will remove it from system
 
 remove "{package}"
+```
+
+```
+# You can remove the specific version from the custom installation dir path once its set
+
+remove "{package}"=="{version}"
+
+# For example:
+## ...Set the installation dir here...
+
+# This will remove version `0.4.5` from `colorama` in the modules directory
+remove "colorama"=="0.4.5"
 ```
 
 ### Run system command
