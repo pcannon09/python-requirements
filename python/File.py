@@ -8,6 +8,7 @@ import shutil
 import platform
 import subprocess
 import glob
+import sys
 
 class File:
     def __init__(self, id: str, path: str):
@@ -16,7 +17,7 @@ class File:
         if (not os.path.exists(path)):
             print(f"[ ERR ] Path \"{path}\" does not exist, make sure to have a valid path")
 
-            return
+            sys.exit(1)
 
         self.path: str = path
         self.id: str = id
@@ -32,11 +33,16 @@ class File:
         self.file = open(path, "r")
 
         self.commands: list = [
-            # {matchCommand}                          ,                          {functionCall}
+            # {matchCommand}                                              ,                                               {functionCall}
+            [r'remove.install_dir', self.remove_installDir],
+
+            [rf'{self.spacing}install{self.spacing}{self.quote}(.*){self.quote}=={self.quote}(.*){self.quote}', self.install],
+            [rf'{self.spacing}remove{self.spacing}{self.quote}(.*){self.quote}=={self.quote}(.*){self.quote}', self.remove],
+
             [rf'{self.spacing}install{self.spacing}{self.quote}(.*){self.quote}', self.install],
             [rf'{self.spacing}remove{self.spacing}{self.quote}(.*){self.quote}', self.remove],
+
             [rf'\$\{{{self.spacing}(.*){self.spacing}}}', self.runSystemCommand],
-            [r'remove.install_dir', self.remove_installDir],
 
             [rf'\[{self.spacing}install_dir{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_installDir],
             [rf'\[{self.spacing}required_os{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_setRequiredOS],
@@ -79,14 +85,22 @@ sys.path.append("{self.installDir}") # Add the modules path
         if (matching):
             if (self.installDir == ""):
                 if (platform.system().lower() == self.osNameReq or self.osNameReq.lower() == "any"):
-                    command = f"pip3 install {matching.group(1)} --break-system-packages"
+                    if (len(matching.groups()) <= 1):
+                        command = f"pip3 install {matching.group(1)} --break-system-packages"
+
+                    else:
+                        command = f"pip3 install {matching.group(1)}=={matching.group(2)} --break-system-packages"
 
             else:
                 if (not os.path.exists(self.installDir)):
                     os.makedirs(f"{os.getcwd()}/{self.installDir}")
 
                 if (platform.system().lower() == self.osNameReq or self.osNameReq.lower() == "any"):
-                    command = f"pip3 install --target={self.installDir} {matching.group(1)}"
+                    if (len(matching.groups()) <= 1):
+                        command = f"pip3 install --target={self.installDir} {matching.group(1)}"
+
+                    else:
+                        command = f"pip3 install --target={self.installDir} {matching.group(1)}=={matching.group(2)}"
 
             commandRun = subprocess.run(command, shell=True)
 
@@ -97,6 +111,9 @@ sys.path.append("{self.installDir}") # Add the modules path
     def remove(self, line: str, matching) -> list:
         if matching:
             if (self.installDir == ""):
+                if (len(matching.groups()) > 1):
+                    return [-1, "The equality operator (==) in the `remove` command can only be used when `install_dir` is set"]
+
                 command = f"pip3 uninstall {matching.group(1)} --break-system-packages"
 
                 commandRun = subprocess.run([command], shell=True)
@@ -104,19 +121,24 @@ sys.path.append("{self.installDir}") # Add the modules path
                 return [commandRun.returncode, commandRun.stderr]
 
             else:
-                removeDirStr = rf"{self.installDir}*{matching.group(1)}*"
+                if (len(matching.groups()) < 1):
+                    removeDirStr = rf"{self.installDir}*{matching.group(1)}*"
+
+                else:
+                    removeDirStr = rf"{self.installDir}*{matching.group(1)}*{matching.group(2)}*"
+
                 matchingDirs = glob.glob(removeDirStr)
 
                 for path in matchingDirs:
                     if (os.path.exists(path)):
-                        shutil.rmtree(path)
-
-                        os.system("ls ./tests/pip_modules")
+                        shutil.rmtree(f"{path}")
 
                 pythonIncFile = f"{self.installDir}include/python/{matching.group(1)}"
 
                 if (os.path.exists(pythonIncFile)):
                     shutil.rmtree(pythonIncFile)
+
+                return [0, ""]
 
         return [-1, "No matching command for `remove()`"]
 
@@ -165,13 +187,16 @@ sys.path.append("{self.installDir}") # Add the modules path
                 matching = re.match(x[0], line)
 
                 if (matching):
-                    x[1](line=line, matching=matching)
+                    result = x[1](line=line, matching=matching)
+
+                    if (result[0] != 0):
+                        return result
 
                     break
 
             else:
                 if not line.startswith("#") and line:
-                    return [-1, f"Unknown command in file `{self.path}` on line `{self.lineNum}`: {line}\nExit status -1"]
+                    return [-1, f"Unknown command in file `{self.path}` on line `{self.lineNum}`: {line}"]
 
-        return [0, ""]
+        return [0, "Success"]
 
