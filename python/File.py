@@ -27,6 +27,9 @@ class File:
         self.installDir: str = ""
         self.confPath: str = ""
         self.osNameReq: str = "any"
+        self.platform: str = "any"
+        self.pipFlags: str = ""
+        self.flags: list = []
 
         self.lineNum: int = 0
 
@@ -35,6 +38,7 @@ class File:
         self.commands: list = [
             # {matchCommand}                                              ,                                               {functionCall}
             [r'remove.install_dir', self.remove_installDir],
+            [r'remove.conf_dir', self.remove_confDir],
 
             [rf'{self.spacing}install{self.spacing}{self.quote}(.*){self.quote}=={self.quote}(.*){self.quote}', self.install],
             [rf'{self.spacing}remove{self.spacing}{self.quote}(.*){self.quote}=={self.quote}(.*){self.quote}', self.remove],
@@ -46,8 +50,36 @@ class File:
 
             [rf'\[{self.spacing}install_dir{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_installDir],
             [rf'\[{self.spacing}required_os{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_setRequiredOS],
-            [rf'\[{self.spacing}conf_dir{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_setConfDir]
+            [rf'\[{self.spacing}conf_dir{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_setConfDir],
+            [rf'\[{self.spacing}flags{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_pipFlags],
+            [rf'\[{self.spacing}requirements_flags{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_requirementsFlag]
         ]
+
+    def statement_requirementsFlag(self, line: str, matching) -> list:
+        if (matching):
+            flags: str = matching.group(1)
+
+            self.flags = flags.split(" ")
+
+            return [0, ""]
+
+        return [-1, "No matching command for `statement_requirementsFlag()`"]
+
+    def remove_confDir(self, line: str, matching) -> list:
+        if (os.path.exists(self.confPath)):
+            os.remove(self.confPath)
+
+            return [0, ""]
+
+        return [1, f"Config path `{self.confPath}` does not exist. Make sure to set a valid path"]
+
+    def statement_pipFlags(self, line: str, matching) -> list:
+        if (matching):
+            self.pipFlags = matching.group(1)
+
+            return [0, ""]
+
+        return [-1, "No matching command for `statement_pipFlags()`"]
 
     def statement_setConfDir(self, line: str, matching) -> list:
         if (matching):
@@ -96,11 +128,11 @@ sys.path.append("{self.installDir}") # Add the modules path
                     os.makedirs(f"{os.getcwd()}/{self.installDir}")
 
                 if (platform.system().lower() == self.osNameReq or self.osNameReq.lower() == "any"):
-                    if (len(matching.groups()) <= 1):
-                        command = f"pip3 install --target={self.installDir} {matching.group(1)}"
+                    if (len(matching.groups()) <= 2):
+                        command = f"pip3 install --target={self.installDir} {matching.group(1)} {self.pipFlags}"
 
                     else:
-                        command = f"pip3 install --target={self.installDir} {matching.group(1)}=={matching.group(2)}"
+                        command = f"pip3 install --target={self.installDir} {matching.group(1)}=={matching.group(2)} {self.pipFlags}"
 
             commandRun = subprocess.run(command, shell=True)
 
@@ -168,6 +200,9 @@ sys.path.append("{self.installDir}") # Add the modules path
 
                 return [0, ""]
 
+            else:
+                return [1, f"No matching path for `{self.installDir}`. Ignoring"]
+
         return [-1, "No matching command for `remove_installDir()`"]
 
     def statement_installDir(self, line: str = "", matching: Any = Any) -> list:
@@ -187,16 +222,41 @@ sys.path.append("{self.installDir}") # Add the modules path
                 matching = re.match(x[0], line)
 
                 if (matching):
-                    result = x[1](line=line, matching=matching)
+                    result: list = x[1](line=line, matching=matching)
 
-                    if (result[0] != 0):
-                        return result
+                    if (result[0] < 0): # Error
+                        result[1] += f"\nLINE INFO:\n{self.lineNum} | {line}"
+                        
+                        ignoreErrs: bool = False
+
+                        for flag in self.flags:
+                            if (flag == "--ignore-errors"):
+                                ignoreErrs = True
+
+                        if (not ignoreErrs):
+                            return result
+
+                        else:
+                            print(f"[ ERROR | WARN ] Ignored error:\n{result[0]}\n{result[1]}")
+                    
+                    elif (result[0] == 1): # Warning
+                        print(f"[ WARN ] {result[1]}")
 
                     break
 
             else:
                 if not line.startswith("#") and line:
-                    return [-1, f"Unknown command in file `{self.path}` on line `{self.lineNum}`: {line}"]
+                    ignoreErrs: bool = False
+
+                    for flag in self.flags:
+                        if (flag == "--ignore-errors"):
+                            ignoreErrs = True
+
+                    if (not ignoreErrs):
+                        return [-1, f"Unknown command in file `{self.path}` on line `{self.lineNum}`: {line}"]
+
+                    else:
+                        print(f"Unknown command in file `{self.path}` on line `{self.lineNum}`: {line}")
 
         return [0, "Success"]
 
