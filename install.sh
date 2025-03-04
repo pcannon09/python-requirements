@@ -16,8 +16,15 @@ if [[ "$1" == "" ]]; then
 
     echo "Files to compile: $compileFilesStr"
 
-    rm -rf ./python/build
-    rm -rf ./python/dist
+    if [ -e "./python/build" ]; then
+        rm -rf ./python/build
+    fi
+
+    if [ -e "./python/dist" ]; then
+        rm -rf ./python/dist
+    fi
+
+    mkdir python
 
     cd python
 
