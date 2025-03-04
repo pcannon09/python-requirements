@@ -1,6 +1,10 @@
+[ requirements_flags = "--ignore-errors" ]
 [ install_dir = "./tests/pip_modules/" ]
+[ conf_dir = "./tests/conf.py" ]
+[ flags = "--only-binary=:all:" ]
 
 remove.install_dir
+remove.conf_dir
 
 [ conf_dir = "./tests/conf.py" ]
 
@@ -10,6 +14,7 @@ install "pyobjc"
 [ required_os = "windows" ]
 install "pywin32"
 
+[ flags = "" ]
 [ required_os = "linux" ]
 install "pyxhook"
 
