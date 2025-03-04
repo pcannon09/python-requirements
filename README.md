@@ -1,6 +1,6 @@
 # Python Requirements
 ## Made with python and for python
-### 1.1.0
+### 1.2.0
 
 ---
 
@@ -74,6 +74,14 @@ remove "{package}"=="{version}"
 remove "colorama"=="0.4.5"
 ```
 
+### Remove configuration directory
+```
+# Remove the set configuration dir
+remove.conf_dir
+
+# You will need to set the configuration dir again to generate it
+```
+
 ### Run system command
 
 ```
@@ -88,6 +96,28 @@ ${<command>}
 # Remove the previously set installation dir
 
 remove.install_dir
+```
+
+### Set PIP flags
+```
+# Set the flags for PIP
+## Use the same PIP flags you would use in a `pip install` command
+## Set it here
+[ flags = "--only-binary=:all:" ]
+
+# Install it using the `install "<package>"` command
+```
+
+### Set python-requirements flags
+
+````
+# Set the flags for the requirements file
+## Flags:
+### [ --ignore-errors ] This will ignore all the errors that the program throws and treat them as a warning
+[ requirements_flags = "<flags>" ]
+
+# Example:
+[ requirements_flags = "--ignore-errors" ]
 ```
 
 ### Example:
@@ -124,3 +154,4 @@ install "pygame"
 # Install colorama version 0.4.5
 install "colorama"=="0.4.5"
 ```
+
