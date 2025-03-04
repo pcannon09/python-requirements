@@ -3,6 +3,6 @@ class ReqInfo:
     # * dev
     # * beta
     # * public
-    VERSION: tuple = (1, 2, 0, "public")
+    VERSION: tuple = (1, 3, 0, "beta")
 
     DEV: bool = False
