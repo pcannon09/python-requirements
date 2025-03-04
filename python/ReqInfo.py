@@ -1,4 +1,8 @@
 class ReqInfo:
-    VERSION_MAJOR: tuple = (1, 1, 0, "public")
+    # Possible version states:
+    # * dev
+    # * beta
+    # * public
+    VERSION: tuple = (1, 2, 0, "public")
 
     DEV: bool = False
