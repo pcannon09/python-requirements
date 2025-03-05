@@ -109,7 +109,7 @@ remove.install_dir
 ```
 
 ### Set python-requirements flags
-````
+```
 # Set the flags for the requirements file
 ## Flags:
 ### [ --ignore-errors ] This will ignore all the errors that the program throws and treat them as a warning
