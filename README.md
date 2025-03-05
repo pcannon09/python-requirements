@@ -1,6 +1,6 @@
 # Python Requirements
 ## Made with python and for python
-### 1.2.0
+### 1.3.0
 
 ---
 
@@ -109,8 +109,7 @@ remove.install_dir
 ```
 
 ### Set python-requirements flags
-
-````
+```
 # Set the flags for the requirements file
 ## Flags:
 ### [ --ignore-errors ] This will ignore all the errors that the program throws and treat them as a warning
@@ -154,4 +153,14 @@ install "pygame"
 # Install colorama version 0.4.5
 install "colorama"=="0.4.5"
 ```
+
+## Positional args flags
+
+`Path`: `--path {filename}` >> Set the path of the requirements file
+
+`Help`: `--help` >> Get all the help you need
+
+`Version`: `--version` >> Get the version of the program
+
+`Shell`: `--shell '{command}'` >> Interpret the commands for requirements on the go
 

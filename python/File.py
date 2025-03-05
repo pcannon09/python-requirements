@@ -14,11 +14,6 @@ class File:
     def __init__(self, id: str, path: str):
         debug.debug(f"Initializing `{id}` with path `{path}` and setting the required variables")
         
-        if (not os.path.exists(path)):
-            print(f"[ ERR ] Path \"{path}\" does not exist, make sure to have a valid path")
-
-            sys.exit(1)
-
         self.path: str = path
         self.id: str = id
         self.spacing = r"\s*" # Equivalent to ' ' ( Space )
@@ -33,7 +28,15 @@ class File:
 
         self.lineNum: int = 0
 
-        self.file = open(path, "r")
+        self.file = None
+
+        if (path != ""):
+            self.file = open(path, "r")
+
+            if (not os.path.exists(path)):
+                print(f"[ ERR ] Path \"{path}\" does not exist, make sure to have a valid path")
+
+                sys.exit(1)
 
         self.commands: list = [
             # {matchCommand}                                              ,                                               {functionCall}
@@ -210,8 +213,15 @@ sys.path.append("{self.installDir}") # Add the modules path
 
         return [0, ""]
 
-    def parse(self) -> list:
-        lines = self.file.read().split("\n")
+    def parse(self, string: str = "") -> list:
+        lines: str | list = ""
+
+        if (string == ""):
+            if (self.file is not None):
+                lines = self.file.read().split("\n")
+
+        else:
+            lines = string.split("\n")
 
         for line in lines:
             line = line.strip()
