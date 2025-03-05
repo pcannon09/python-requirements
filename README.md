@@ -155,3 +155,10 @@ install "pygame"
 install "colorama"=="0.4.5"
 ```
 
+## Positional args flags
+
+`Path`: `--path {filename}` >> Set the path of the requirements file
+`Help`: `--help` >> Get all the help you need
+`Version`: `--version` >> Get the version of the program
+`Shell`: `--shell '{command}'` >> Interpret the commands for requirements on the go
+
