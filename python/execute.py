@@ -47,16 +47,20 @@ def main():
             totalCommandStr: str = ""
 
             if (len(sys.argv) > 2):
-                if (sys.argv[2] != ""):
-                    file: File = File("shell-parse-req-main-param", "")
-                    out = file.parse(totalCommandStr)
+                if (len(sys.argv) > 2):
+                    for i in range(2, len(sys.argv)):
+                        totalCommandStr += f"{sys.argv[i]} "
 
-                    print(f"Exit code:    {out[0]}")
-                    print(f"Exit message: {out[1]}")
+                file: File = File("shell-parse-req-main-param", "")
+                file.path = "<COMMAND_LINE>"
+                out = file.parse(totalCommandStr)
 
-                    outMsg(file, out)
+                print(f"Exit code:    {out[0]}")
+                print(f"Exit message: {out[1]}")
 
-                    sys.exit(0)
+                outMsg(file, out)
+
+                sys.exit(0)
 
             while (1):
                 command: str = input(f"{line} >>> ")
@@ -71,6 +75,8 @@ def main():
                     print("[ EXIT ] Exit shell")
                     print("[ RUN ] Run the previous scripts")
                     print("[ RESET ] Clear all the commands and previous scripts")
+                    print("[ GOTO ] Go to a specific line")
+                    print("[ HISTORY ] Show the history of all the commands")
 
                     continue
 
@@ -91,9 +97,15 @@ def main():
                     continue
                 
                 elif (command == "RESET"):
-                    line = 0
+                    line = 1
                     totalCommandStr = ""
-                    totalCommand = [0, ""]
+                    totalCommand = [line, ""]
+
+                    continue
+
+                elif (command == "HISTORY"):
+                    print("* HISTORY")
+                    print(totalCommand)
 
                     continue
 
@@ -101,20 +113,26 @@ def main():
                     print(f"GOTO L{command.split(" ")[1]}")
 
                     try:
-                        del totalCommand[int(command.split(" ")[1]):]
+                        index = int(command.split(" ")[1])
+                        line = index
+
+                        del totalCommand[index + 1:]
+                        totalCommandStr = totalCommand[index - 1][1]
+
+                        print(totalCommand)
+                        print(totalCommandStr)
 
                     except ValueError:
                         print("[ ERROR ] Please provide an int")
 
-                        continue
-
-                    totalCommandStr = totalCommand[int(command.split(" ")[1])]
+                    except IndexError:
+                        print("[ ERROR ] Out of range")
 
                     continue
 
-                line += 1
                 totalCommandStr += f"{command}\n"
                 totalCommand.append([line, f"{command}\n"])
+                line += 1
 
             sys.exit(0)
 
