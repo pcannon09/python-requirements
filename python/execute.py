@@ -29,6 +29,7 @@ def main():
             print("[ --help | -h ] Display this help")
             print("[ --version | -v ] Display version information")
             print("[ --path ] Set the path to provide the requirements")
+            print("[ --shell '$1 $2 ...' ] Go to an interactive shell without needing to create files ( NOTE: Call HELP command in the shell for more info )")
 
             sys.exit(0)
 
