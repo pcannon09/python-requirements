@@ -32,7 +32,4 @@ if ([string]::IsNullOrEmpty($action)) {
     Move-Item -Path "./python/dist/py-req" -Destination "./bin/"
     Remove-Item -Path "./python/dist", "./python/build", "./python/main.spec" -Recurse -Force
 }
-elseif ($action -eq "run") {
-    & "./python/dist/main/py-req" $arg2
-}
 
