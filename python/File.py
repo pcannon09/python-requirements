@@ -31,7 +31,13 @@ class File:
         self.file = None
 
         if (path != ""):
-            self.file = open(path, "r")
+            try:
+                self.file = open(path, "r")
+
+            except FileNotFoundError:
+                print(f"Could not find `{path}` file. Please provide a valid path")
+
+                sys.exit(1)
 
             if (not os.path.exists(path)):
                 print(f"[ ERR ] Path \"{path}\" does not exist, make sure to have a valid path")

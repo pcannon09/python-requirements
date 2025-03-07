@@ -137,6 +137,14 @@ def main():
 
             sys.exit(0)
 
+        else:
+            msg: str = f"No such flag called `{sys.argv[1]}`"
+
+            debug.debug(msg, "error")
+            print(msg)
+
+            sys.exit(1)
+
     debug.debug(f"Opening `{filePath}`...", "info")
 
     file: File = File("parse-req-main", filePath)
