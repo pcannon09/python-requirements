@@ -39,8 +39,5 @@ if [[ "$1" == "" ]]; then
     mv ./python/dist/py-req ./bin/
 
     rm -rf ./python/dist/ ./python/build/ ./python/main.spec
-
-elif [[ "$1" == "run" ]]; then
-    ./python/dist/main/py-req "$2"
 fi
 
