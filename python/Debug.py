@@ -5,6 +5,10 @@ class Debug:
     save_defaultType: str = "debug"
 
     def __init__(self, saveFile: str | None, defaultType: str | None = "debug"):
+        """
+        @brief Initalize the debug object
+        """
+
         global save_defaultType
 
         self.saveFile = saveFile
@@ -13,6 +17,12 @@ class Debug:
         save_defaultType = defaultType
 
     def debug(self, msg: str, debType: str = save_defaultType):
+        """
+        @brief Debug to output
+        @param msg The message to debug
+        @param debType Can be: debug, warn, error
+        """
+
         debugData = f"[ {dt.datetime.now()} | {debType.capitalize()} ] {msg}"
 
         if (ReqInfo.DEV):
