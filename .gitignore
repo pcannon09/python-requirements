@@ -1,5 +1,6 @@
-# Private
-.private
+# Private and docs
+.private/
+docs/
 
 # Tests
 tests/*
