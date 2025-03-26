@@ -1,7 +1,12 @@
+print "[ * ] STARTING"
+
 [ requirements_flags = "--ignore-errors" ]
 [ install_dir = "./tests/pip_modules/" ]
+[ modules_path = "././pip_modules" ]
 [ conf_dir = "./tests/conf.py" ]
 [ flags = "--only-binary=:all:" ]
+
+${date}
 
 remove.install_dir
 remove.conf_dir
@@ -22,3 +27,4 @@ install "pyxhook"
 install "pygame"
 install "colorama"=="0.4.5"
 
+print "[ * ] END"
