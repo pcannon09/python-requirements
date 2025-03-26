@@ -12,6 +12,14 @@ import sys
 
 class File:
     def __init__(self, id: str, path: str):
+        """
+        @brief Initalize everything for the parser
+        * NOTES:
+        ** AVAILABLE FLAGS:
+        --ignore-errors # Ignores all the errors
+        --no-system-commands # Disable the execution of system commands
+        """
+
         debug.debug(f"Initializing `{id}` with path `{path}` and setting the required variables")
         
         self.path: str = path
@@ -24,6 +32,7 @@ class File:
         self.osNameReq: str = "any"
         self.platform: str = "any"
         self.pipFlags: str = ""
+        self.moduleDirPath: str = "pip_modules/"
         self.flags: list = []
 
         self.lineNum: int = 0
@@ -44,27 +53,71 @@ class File:
 
                 sys.exit(1)
 
+        # Set the commands in the requirements file
         self.commands: list = [
             # {matchCommand}                                              ,                                               {functionCall}
-            [r'remove.install_dir', self.remove_installDir],
-            [r'remove.conf_dir', self.remove_confDir],
+            [r'remove.install_dir', self.remove_installDir], # Remove the previously set installation dir
+            [r'remove.conf_dir', self.remove_confDir], # Remove the configuration dir
 
-            [rf'{self.spacing}install{self.spacing}{self.quote}(.*){self.quote}=={self.quote}(.*){self.quote}', self.install],
-            [rf'{self.spacing}remove{self.spacing}{self.quote}(.*){self.quote}=={self.quote}(.*){self.quote}', self.remove],
+            [rf'{self.spacing}install{self.spacing}{self.quote}(.*){self.quote}=={self.quote}(.*){self.quote}', self.install], # Install the following package with the specified version
+            [rf'{self.spacing}remove{self.spacing}{self.quote}(.*){self.quote}=={self.quote}(.*){self.quote}', self.remove], # Remove the following package with the specified version (Only works with the set installation dir)
 
-            [rf'{self.spacing}install{self.spacing}{self.quote}(.*){self.quote}', self.install],
-            [rf'{self.spacing}remove{self.spacing}{self.quote}(.*){self.quote}', self.remove],
+            [rf'{self.spacing}install{self.spacing}{self.quote}(.*){self.quote}', self.install], # Install the following package
+            [rf'{self.spacing}remove{self.spacing}{self.quote}(.*){self.quote}', self.remove], # Remove the following package
 
-            [rf'\$\{{{self.spacing}(.*){self.spacing}}}', self.runSystemCommand],
+            [rf'\$\{{{self.spacing}(.*){self.spacing}}}', self.runSystemCommand], # Execute system command
 
-            [rf'\[{self.spacing}install_dir{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_installDir],
-            [rf'\[{self.spacing}required_os{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_setRequiredOS],
-            [rf'\[{self.spacing}conf_dir{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_setConfDir],
-            [rf'\[{self.spacing}flags{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_pipFlags],
-            [rf'\[{self.spacing}requirements_flags{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_requirementsFlag]
+            [rf'\[{self.spacing}install_dir{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_installDir], # Set install dir
+            [rf'\[{self.spacing}required_os{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_setRequiredOS], # Set required OS
+            [rf'\[{self.spacing}modules_path{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_setModulePath], # Set config path
+            [rf'\[{self.spacing}conf_dir{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_setConfDir], # Set config dir
+            [rf'\[{self.spacing}flags{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_pipFlags], # Set flags
+            [rf'\[{self.spacing}requirements_flags{self.spacing}={self.spacing}{self.quote}(.*){self.quote}{self.spacing}\]', self.statement_requirementsFlag], # Set requirements flags
+
+            [rf'{self.spacing}print{self.spacing}{self.quote}(.*){self.quote}{self.spacing}', self.print] # Print text to the output
         ]
 
+    def print(self, line: str, matching) -> list:
+        """
+        @brief print something to the output in requirements
+        * USAGE:
+        print {text}
+        """
+
+        if (matching):
+            for x in matching.groups():
+                print(x)
+
+            return [0, ""]
+
+        return [-1, "No matching command for `print()`"]
+
+    def statement_setModulePath(self, line: str, matching) -> list:
+        """
+        @brief Set the path of the pip_modules in the configuration file
+
+        * USAGE:
+        [ modules_path = "./path/to/pip_modules" ]
+        """
+
+        if (matching):
+            if (matching.group(1) == self.spacing):
+                return [-1, "Configuration path must contain a valid path"]
+
+            self.moduleDirPath = matching.group(1)
+
+            return [0, ""]
+
+        return [-1, "No matching command for `statement_setModulePath()`"]
+
     def statement_requirementsFlag(self, line: str, matching) -> list:
+        """
+        @brief Set the flags for the requirements file
+        
+        * USAGE:
+        [ requirements_flags = "{flag1} {flag2} {...}" ]
+        """
+
         if (matching):
             flags: str = matching.group(1)
 
@@ -75,6 +128,13 @@ class File:
         return [-1, "No matching command for `statement_requirementsFlag()`"]
 
     def remove_confDir(self, line: str, matching) -> list:
+        """
+        @brief Remove the set configuration file
+
+        * USAGE:
+        remove.conf_dir
+        """
+
         if (os.path.exists(self.confPath)):
             os.remove(self.confPath)
 
@@ -83,6 +143,13 @@ class File:
         return [1, f"Config path `{self.confPath}` does not exist. Make sure to set a valid path"]
 
     def statement_pipFlags(self, line: str, matching) -> list:
+        """
+        @brief Set the flags when pip command is executed, the flags are the same as when you pass them to a pip command
+
+        * USAGE:
+        [ flags = "{flags}" ]
+        """
+
         if (matching):
             self.pipFlags = matching.group(1)
 
@@ -91,16 +158,22 @@ class File:
         return [-1, "No matching command for `statement_pipFlags()`"]
 
     def statement_setConfDir(self, line: str, matching) -> list:
+        """
+        @brief Set the configuration dir
+
+        * USAGE:
+        [ conf_dir = "./path/to/conf.py" ]
+        """
+
         if (matching):
             if (not os.path.exists(matching.group(1))):
                 os.makedirs(os.path.dirname(matching.group(1)), exist_ok=True)
 
-            writeStr: str = f"""
-# Auto generated config file from `python-requirements`
+            writeStr: str = f"""# Auto generated config file from `python-requirements`
 
 import sys
 
-sys.path.append("{self.installDir}") # Add the modules path
+sys.path.append("{self.moduleDirPath}") # Add the modules path
 """
 
             with open(matching.group(1), "w") as f:
@@ -113,6 +186,18 @@ sys.path.append("{self.installDir}") # Add the modules path
         return [-1, "No matching command for `statement_setConfDir()`"]
 
     def statement_setRequiredOS(self, line: str, matching) -> list:
+        """
+        @brief Set the required OS for installation
+        Examples:
+        linux,
+        darwin,
+        windows,
+        any
+
+        * USAGE:
+        [ required_os = "{OS}" ]
+        """
+
         if (matching):
             self.osNameReq = matching.group(1).lower()
 
@@ -121,6 +206,13 @@ sys.path.append("{self.installDir}") # Add the modules path
         return [-1, "No matching command for `statement_setRequiredOS()`"]
 
     def install(self, line: str, matching) -> list:
+        """
+        @brief Install a module from pip
+
+        * USAGE:
+        install "{module}"
+        """
+
         command: str = ""
 
         if (matching):
@@ -150,6 +242,13 @@ sys.path.append("{self.installDir}") # Add the modules path
         return [-1, "No matching command for `install()`"]
 
     def remove(self, line: str, matching) -> list:
+        """
+        @brief Remove a package installed from the modules dir
+
+        * USAGE:
+        remove "{module}"
+        """
+
         if matching:
             if (self.installDir == ""):
                 if (len(matching.groups()) > 1):
@@ -184,6 +283,10 @@ sys.path.append("{self.installDir}") # Add the modules path
         return [-1, "No matching command for `remove()`"]
 
     def removeDir(self, line: str, matching) -> list:
+        """
+        @brief Remove a directory from the matching regex
+        """
+
         if (matching):
             if (os.path.exists(matching.group(1))):
                 shutil.rmtree(matching.group(1))
@@ -195,6 +298,17 @@ sys.path.append("{self.installDir}") # Add the modules path
         return [-1, "No matching command for `removeDir()`"]
 
     def runSystemCommand(self, line: str, matching) -> list:
+        """
+        @brief Run any system command
+
+        * USAGE:
+        ${ {command} }
+        """
+
+        for flag in self.flags:
+            if (flag == "--no-system-commands"):
+                return [-1, "Running system commands are not allowed in this configuration"]
+
         if (matching):
             commandRun = subprocess.run([matching.group(1)], shell=True)
 
@@ -203,6 +317,13 @@ sys.path.append("{self.installDir}") # Add the modules path
         return [-1, "No matching command for `runSystemCommand()`"]
 
     def remove_installDir(self, line: str, matching) -> list:
+        """
+        @brief Remove previously set installation dir
+
+        * USAGE:
+        remove.install_dir
+        """
+
         if (matching):
             if (os.path.exists(self.installDir)):
                 shutil.rmtree(self.installDir)
@@ -215,11 +336,22 @@ sys.path.append("{self.installDir}") # Add the modules path
         return [-1, "No matching command for `remove_installDir()`"]
 
     def statement_installDir(self, line: str = "", matching: Any = Any) -> list:
+        """
+        @brief Set the installation dir
+
+        * USAGE:
+        [ install_dir = "./path/to/pip_modules" ]
+        """
+
         self.installDir = matching.group(1)
 
         return [0, ""]
 
     def parse(self, string: str = "") -> list:
+        """
+        @brief Parse a string or file to execute the requirements
+        """
+
         lines: str | list = ""
 
         if (string == ""):
