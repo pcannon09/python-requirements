@@ -1,6 +1,6 @@
 # Python Requirements
 ## Made with python and for python
-### 1.4.0
+### 1.4.1
 
 ---
 

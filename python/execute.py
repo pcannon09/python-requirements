@@ -3,7 +3,18 @@ from Debug import debug
 from ReqInfo import ReqInfo
 
 import sys
-import readline
+
+try:
+	import readline
+
+except:
+	print("[ ERR ] Not a supported OS for `readline` package")
+
+	try:
+		import pyreadline3
+
+	except:
+		print("[ ERR ] Could not import `pyreadline3`")
 
 def outMsg(file: File, out: list):
     if (out[0] == 0):
@@ -28,7 +39,7 @@ def main():
             print("* HELP")
             print("[ --help | -h ] Display this help")
             print("[ --version | -v ] Display version information")
-            print("[ --path ] Set the path to provide the requirements")
+            print("[ --path | -p ] Set the path to provide the requirements")
             print("[ --shell '$1 $2 ...' ] Go to an interactive shell without needing to create files ( NOTE: Call HELP command in the shell for more info )")
 
             sys.exit(0)
